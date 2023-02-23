@@ -1,0 +1,9 @@
+{
+  "full_name": "Bart M. Doekemeijer",
+  "email": "bart.doekemeijer@shell.com",
+  "github_username": "Bartdoekemeijer",
+  "project_name": "Windfarm Example",
+  "project_slug": "{{ cookiecutter.project_name.lower().replace(' ', '_').replace('-', '_') }}",
+  "project_description": "Collection of modeling and analysis scripts for project '{{ cookiecutter.project_name }}'. Heavily relies on FLORIS and FLASC.",
+  "populate_with_examples": "y"
+}
