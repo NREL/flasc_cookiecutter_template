@@ -38,9 +38,9 @@ and follow the interactive menus.
 
 Last, pip install your newly created project using
 ```
-pip install -e <new_package_name>/python
+pip install -e <new_project_slug>/python
 ```
-where `<new_package_name>` is the project slug your provided in the interactive menus (defaults to `windfarm_example`).
+where `<new_project_slug>` is the project slug your provided in the interactive menus (defaults to `windfarm_example`).
 # License
 
 Copyright 2023 NREL
