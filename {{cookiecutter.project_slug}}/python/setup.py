@@ -4,7 +4,7 @@
 
 from setuptools import setup, find_packages
 
-requirements = ["floris>=3.0", "openpyxl", "flasc", "jupyter"]
+requirements = ["floris>=3.4", "openpyxl", "flasc==1.3.1", "jupyter"]
 
 test_requirements = []
 
