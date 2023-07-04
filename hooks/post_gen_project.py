@@ -13,11 +13,14 @@
 # limitations under the License.
 
 
-
+import glob
 import os
+import requests
 import numpy as np
 import shutil
 import json
+from zipfile import ZipFile
+
 PROJECT_DIRECTORY = os.path.realpath(os.path.curdir)
 
 
@@ -63,20 +66,60 @@ def remove_file(filepath):
 
 
 def remove_directory(filepath):
-    #os.rmdir(os.path.join(PROJECT_DIRECTORY, filepath))
     shutil.rmtree(os.path.join(PROJECT_DIRECTORY, filepath))
 
 
-if __name__ == '__main__':
-    # Remove example directories
-    if '{{ cookiecutter.populate_with_examples }}' != 'y':
-        remove_directory('python/export_energyratios_to_table')
-        # remove_directory('_legacy')
-        remove_directory('python/raw_data_processing')
-        remove_directory('python/visualize_energy_ratios')
-        remove_file(os.path.join("common_windfarm_information", "demo_dataset_metmast_600s.csv"))
-        remove_file(os.path.join("common_windfarm_information", "demo_dataset_scada_600s.csv"))
-    
+def download_flasc_examples(branch: str = "main", chunk_size=120):
+    if branch == "main":
+        url = r"https://github.com/NREL/flasc/archive/refs/heads/main.zip"
+    elif branch == "develop":
+        url = r"https://github.com/NREL/flasc/archive/refs/heads/develop.zip"
     else:
-        convert_ipynb_to_py('python/raw_data_processing/filter_ws_power_curves.ipynb')
-        convert_ipynb_to_py('python/raw_data_processing/northing_calibration.ipynb')
+        raise UserWarning("Unfamiliar branch specified.")
+
+    # Create tmp directory
+    r = requests.get(url, stream=True)
+    root_path = os.path.dirname(os.path.abspath(__file__))
+    tmp_path = os.path.join(root_path, "tmp")
+    os.makedirs(tmp_path, exist_ok=True)
+
+    # Download file
+    filename = os.path.join(tmp_path, "flasc_repository.zip")
+    with open(filename, 'wb') as fd:
+        for chunk in r.iter_content(chunk_size=chunk_size):
+            fd.write(chunk)
+    print(f"Finished downloading '{filename}'.")
+
+    # Unzip the file
+    with ZipFile(filename) as zipfile:
+        zipfile.extractall(tmp_path)
+    
+    # Move all example files over
+    print("Importing FLASC example scripts and customizing to this repository...")
+    for subpath in glob.glob(os.path.join(tmp_path, f"flasc-{branch}", "examples_artificial_data", "*")):
+        shutil.move(
+            subpath,
+            os.path.join(root_path, "..", "{{cookiecutter.project_slug}}", "python"),
+            copy_function=shutil.copy2
+        )
+
+    # Remove 'tmp' directory
+    os.rmdir(tmp_path)            
+
+if __name__ == '__main__':
+    # Download file
+    download_flasc_examples(branch='develop')
+
+    # # Remove example directories
+    # if '{{ cookiecutter.populate_with_examples }}' != 'y':
+    # # if '{{ cookiecutter.populate_with_examples }}' != 'y':
+    #     remove_directory('python/export_energyratios_to_table')
+    #     # remove_directory('_legacy')
+    #     remove_directory('python/raw_data_processing')
+    #     remove_directory('python/visualize_energy_ratios')
+    #     remove_file(os.path.join("common_windfarm_information", "demo_dataset_metmast_600s.csv"))
+    #     remove_file(os.path.join("common_windfarm_information", "demo_dataset_scada_600s.csv"))
+    
+    # else:
+    #     convert_ipynb_to_py('python/raw_data_processing/filter_ws_power_curves.ipynb')
+    #     convert_ipynb_to_py('python/raw_data_processing/northing_calibration.ipynb')
