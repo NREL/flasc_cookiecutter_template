@@ -68,6 +68,7 @@ def remove_file(filepath):
 def remove_directory(filepath):
     shutil.rmtree(os.path.join(PROJECT_DIRECTORY, filepath))
 
+
 def replace_str_in_python_file(filepath, str_old, str_new):
     root_path = os.path.dirname(os.path.abspath(__file__))
     with open(filepath, "rt") as fin:
@@ -79,8 +80,7 @@ def replace_str_in_python_file(filepath, str_old, str_new):
     # Replace file with temporary file
     os.remove(filepath)
     os.rename(tmp_file, filepath)
-    print("done")
-    
+
 
 def download_flasc_examples(branch: str = "main", chunk_size=120):
     if branch == "main":
@@ -112,7 +112,10 @@ def download_flasc_examples(branch: str = "main", chunk_size=120):
     src_path = os.path.join(tmp_path, f"flasc-{branch}", "examples_artificial_data")
 
     # Now replace certain strings in all files
-    py_files = glob.glob(os.path.join(src_path, "**", "*.py"))
+    py_files = [
+        *glob.glob(os.path.join(src_path, "**", "*.py")),
+        *glob.glob(os.path.join(src_path, "**", "*.ipynb"))
+    ]
     for fn in py_files:
         replace_str_in_python_file(fn, "from flasc.examples.models import load_floris_artificial as load_floris", "from {{cookiecutter.project_slug}}.models import load_floris")
 
@@ -124,10 +127,8 @@ def download_flasc_examples(branch: str = "main", chunk_size=120):
             copy_function=shutil.copy2
         )
 
-
-
     # Remove 'tmp' directory
-    os.rmdir(tmp_path)
+    shutil.rmtree(tmp_path)
 
 if __name__ == '__main__':
     # Download file
