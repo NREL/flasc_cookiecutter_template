@@ -68,6 +68,19 @@ def remove_file(filepath):
 def remove_directory(filepath):
     shutil.rmtree(os.path.join(PROJECT_DIRECTORY, filepath))
 
+def replace_str_in_python_file(filepath, str_old, str_new):
+    root_path = os.path.dirname(os.path.abspath(__file__))
+    with open(filepath, "rt") as fin:
+        tmp_file = os.path.join(root_path, "tmp", "_tmp.txt")
+        with open(tmp_file, "wt") as fout:
+            for line in fin:
+                fout.write(line.replace(str_old, str_new))
+
+    # Replace file with temporary file
+    os.remove(filepath)
+    os.rename(tmp_file, filepath)
+    print("done")
+    
 
 def download_flasc_examples(branch: str = "main", chunk_size=120):
     if branch == "main":
@@ -96,15 +109,25 @@ def download_flasc_examples(branch: str = "main", chunk_size=120):
     
     # Move all example files over
     print("Importing FLASC example scripts and customizing to this repository...")
-    for subpath in glob.glob(os.path.join(tmp_path, f"flasc-{branch}", "examples_artificial_data", "*")):
+    src_path = os.path.join(tmp_path, f"flasc-{branch}", "examples_artificial_data")
+
+    # Now replace certain strings in all files
+    py_files = glob.glob(os.path.join(src_path, "**", "*.py"))
+    for fn in py_files:
+        replace_str_in_python_file(fn, "from flasc.examples.models import load_floris_artificial as load_floris", "from {{cookiecutter.project_slug}}.models import load_floris")
+
+    # Now move files to correct directory
+    for subpath in glob.glob(os.path.join(src_path, "*")):
         shutil.move(
             subpath,
             os.path.join(root_path, "..", "{{cookiecutter.project_slug}}", "python"),
             copy_function=shutil.copy2
         )
 
+
+
     # Remove 'tmp' directory
-    os.rmdir(tmp_path)            
+    os.rmdir(tmp_path)
 
 if __name__ == '__main__':
     # Download file
