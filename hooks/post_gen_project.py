@@ -119,7 +119,27 @@ def download_flasc_examples(branch: str = "main", chunk_size=120):
     for fn in py_files:
         replace_str_in_python_file(fn, "from flasc.examples.models import load_floris_artificial as load_floris", "from {{cookiecutter.project_slug}}.models import load_floris")
 
-    # Now move files to correct directory
+    # Now move raw data file to 'common_windfarm_information' folder
+    shutil.move(
+        os.path.join(src_path, "raw_data_processing", "data", "raw_artificial_data.zip"),
+        os.path.join(root_path, "..", "{{cookiecutter.project_slug}}", "common_windfarm_information", "raw_artificial_data.zip"),
+        copy_function=shutil.copy2
+    )
+
+    # Replace where we load the raw data file from, since now the file has been moved
+    replace_str_in_python_file(
+        os.path.join(src_path, "raw_data_processing", "filter_ws_power_curves.ipynb"),
+        'source_path = os.path.join(root_path, \\"data\\")',
+        'source_path = os.path.join(root_path, \\"..\\", \\"..\\", \\"common_windfarm_information\\")'
+    )
+
+    replace_str_in_python_file(
+        os.path.join(src_path, "raw_data_processing", "filter_ws_power_curves.ipynb"),
+        'zipfile.extractall(\\"data\\")',
+        'zipfile.extractall(source_path)'
+    )
+
+    # Now move remaining Python files to correct directory
     for subpath in glob.glob(os.path.join(src_path, "*")):
         shutil.move(
             subpath,
