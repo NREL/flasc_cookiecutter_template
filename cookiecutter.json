@@ -5,5 +5,11 @@
   "project_name": "Windfarm Example",
   "project_slug": "{{ cookiecutter.project_name.lower().replace(' ', '_').replace('-', '_') }}",
   "project_description": "Collection of modeling and analysis scripts for project '{{ cookiecutter.project_name }}'. Heavily relies on FLORIS and FLASC.",
-  "populate_with_examples": "y"
+  "populate_with_examples": [
+    "Artificial SCADA data analysis examples from the 'flasc/main' branch",
+    "Artificial SCADA data analysis examples from the 'flasc/develop' branch",
+    "Smarteole wake steering campaign analysis examples from the 'flasc/main' branch",
+    "Smarteole wake steering campaign analysis examples from the 'flasc/develop' branch",
+    "none -- do not copy any examples over"
+  ]
 }
