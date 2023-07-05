@@ -16,9 +16,9 @@
 import glob
 import os
 import requests
-import numpy as np
+# import numpy as np
 import shutil
-import json
+# import json
 from zipfile import ZipFile
 
 PROJECT_DIRECTORY = os.path.realpath(os.path.curdir)
@@ -69,6 +69,28 @@ def remove_directory(filepath):
     shutil.rmtree(os.path.join(PROJECT_DIRECTORY, filepath))
 
 
+def remove_lines_in_python_file(filepath, substr_start=None, substr_end=None):
+    root_path = os.path.dirname(os.path.abspath(__file__))
+    write_lines = (substr_start is not None)
+    with open(filepath, "rt") as fin:
+        tmp_file = os.path.join(root_path, "tmp", "_tmp.txt")
+        with open(tmp_file, "wt") as fout:
+            for line in fin:
+                if write_lines:
+                    if substr_start in line:
+                        write_lines = False
+                
+                if write_lines:
+                    fout.write(line)
+
+                if not write_lines and substr_end is not None:
+                    if substr_end in line:
+                        write_lines = True
+
+    # Replace file with temporary file
+    os.remove(filepath)
+    os.rename(tmp_file, filepath)
+
 def replace_str_in_python_file(filepath, str_old, str_new):
     root_path = os.path.dirname(os.path.abspath(__file__))
     with open(filepath, "rt") as fin:
@@ -107,11 +129,11 @@ def download_flasc_examples(branch: str = "main", subfolder: str = "examples_art
     with ZipFile(filename) as zipfile:
         zipfile.extractall(tmp_path)
     
-    # Move all example files over
+    # Specify where the files live
     print("Importing FLASC example scripts and customizing to this repository...")
     src_path = os.path.join(tmp_path, f"flasc-{branch}", subfolder)
 
-    # Now replace certain strings in all files
+    # Now replace certain strings in all Python and Python Notebook files
     py_files = [
         *glob.glob(os.path.join(src_path, "**", "*.py")),
         *glob.glob(os.path.join(src_path, "**", "*.ipynb"))
@@ -144,13 +166,74 @@ def download_flasc_examples(branch: str = "main", subfolder: str = "examples_art
     else:
         # Format Smarteole data processing files into FCT format
         for fn in py_files:
-            replace_str_in_python_file(fn, "from flasc.examples.models import load_floris_smarteole as load_floris", "from {{cookiecutter.project_slug}}.models import load_floris")
+            replace_str_in_python_file(
+                fn,
+                "from flasc.examples.models import load_floris_smarteole as load_floris",
+                "from {{cookiecutter.project_slug}}.models import load_floris"
+            )
 
     # Now move remaining Python files to correct directory
     for subpath in glob.glob(os.path.join(src_path, "*")):
         shutil.move(
             subpath,
             os.path.join(root_path, "..", "{{cookiecutter.project_slug}}", "python"),
+            copy_function=shutil.copy2
+        )
+
+    # Update models.py to fit in FCT format
+    fn = filepath=os.path.join(src_path, "..", "flasc", "examples", "models.py")
+    if subfolder == "examples_artificial_data":
+        replace_str_in_python_file(
+            filepath=fn,
+            str_old="load_floris_artificial",
+            str_new="load_floris"
+        )
+        replace_str_in_python_file(
+            filepath=fn,
+            str_old="floris_input_artificial",
+            str_new="floris_inputs"
+        )
+        remove_lines_in_python_file(
+            fn,
+            substr_start="def load_floris_smarteole(",
+            substr_end="return (fi, turbine_weights)"
+        )
+        remove_lines_in_python_file(
+            fn,
+            substr_start="# Load and time the Smarteole FLORIS model",
+            substr_end="plot_floris_layout(fi,"
+        )
+        shutil.move(
+            os.path.join(src_path, "..", "flasc", "examples", "floris_input_artificial"),
+            os.path.join(root_path, "..", "{{cookiecutter.project_slug}}", "python", "{{cookiecutter.project_slug}}", "floris_inputs"),
+            copy_function=shutil.copy2
+        )
+
+    else:
+        replace_str_in_python_file(
+            fn,
+            str_old="load_floris_smarteole",
+            str_new="load_floris"
+        )
+        replace_str_in_python_file(
+            filepath=fn,
+            str_old="floris_input_smarteole",
+            str_new="floris_inputs"
+        )
+        remove_lines_in_python_file(
+            fn,
+            substr_start="def load_floris_artificial(",
+            substr_end="return (fi, turbine_weights)"
+        )
+        remove_lines_in_python_file(
+            fn,
+            substr_start="# Load and time the artificial FLORIS model",
+            substr_end="plot_floris_layout(fi,"
+        )
+
+        shutil.move(
+            os.path.join(src_path, "..", "flasc", "examples", "floris_input_smarteole"),
+            os.path.join(root_path, "..", "{{cookiecutter.project_slug}}", "python", "{{cookiecutter.project_slug}}", "floris_inputs"),
             copy_function=shutil.copy2
         )
 
@@ -165,6 +248,9 @@ def download_flasc_examples(branch: str = "main", subfolder: str = "examples_art
     shutil.rmtree(tmp_path)
 
 if __name__ == '__main__':
+    # Force it now
+    download_flasc_examples(branch='develop')
+
     # Populate repository with examples, if necessary
     if '{{ cookiecutter.populate_with_examples }}' == "Artificial SCADA data analysis examples from the 'flasc/main' branch":
         download_flasc_examples(branch='main')
