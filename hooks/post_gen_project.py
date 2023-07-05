@@ -135,6 +135,8 @@ def download_flasc_examples(branch: str = "main", subfolder: str = "examples_art
 
     # Now replace certain strings in all Python and Python Notebook files
     py_files = [
+        *glob.glob(os.path.join(src_path, "*.py")),
+        *glob.glob(os.path.join(src_path, "*.ipynb")),
         *glob.glob(os.path.join(src_path, "**", "*.py")),
         *glob.glob(os.path.join(src_path, "**", "*.ipynb"))
     ]
@@ -165,12 +167,15 @@ def download_flasc_examples(branch: str = "main", subfolder: str = "examples_art
         )
     else:
         # Format Smarteole data processing files into FCT format
+        subdir = os.path.join(src_path, "experiment_analysis")
+        os.makedirs(subdir, exist_ok=True)
         for fn in py_files:
             replace_str_in_python_file(
                 fn,
                 "from flasc.examples.models import load_floris_smarteole as load_floris",
                 "from {{cookiecutter.project_slug}}.models import load_floris"
             )
+            shutil.move(fn, os.path.join(subdir, os.path.basename(fn)))
 
     # Now move remaining Python files to correct directory
     for subpath in glob.glob(os.path.join(src_path, "*")):
@@ -181,7 +186,7 @@ def download_flasc_examples(branch: str = "main", subfolder: str = "examples_art
         )
 
     # Update models.py to fit in FCT format
-    fn = filepath=os.path.join(src_path, "..", "flasc", "examples", "models.py")
+    fn = os.path.join(src_path, "..", "flasc", "examples", "models.py")
     if subfolder == "examples_artificial_data":
         replace_str_in_python_file(
             filepath=fn,
@@ -249,7 +254,8 @@ def download_flasc_examples(branch: str = "main", subfolder: str = "examples_art
 
 if __name__ == '__main__':
     # Force it now
-    download_flasc_examples(branch='develop')
+    # download_flasc_examples(branch='develop', subfolder="examples_artificial_data")
+    download_flasc_examples(branch='develop', subfolder="examples_smarteole")
 
     # Populate repository with examples, if necessary
     if '{{ cookiecutter.populate_with_examples }}' == "Artificial SCADA data analysis examples from the 'flasc/main' branch":
